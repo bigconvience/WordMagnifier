@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="height_below_touch_point">1dp</dimen>
+    <dimen name="height_below_touch_point">10dp</dimen>
+    <dimen name="zoom_view_width">206dp</dimen>
+    <dimen name="zoom_view_height">45dp</dimen>
+    <dimen name="zoom_view_padding">1dp</dimen>
+    <dimen name="glass_view_width">220dp</dimen>
+    <dimen name="glass_view_height">66dp</dimen>
+    <dimen name="glass_view_padding">5.5dp</dimen>
 </resources>
