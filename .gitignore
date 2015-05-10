@@ -1,0 +1,8 @@
+*.class
+*.apk
+*.dex
+*.com
+
+bin/
+gen/
+obj/
