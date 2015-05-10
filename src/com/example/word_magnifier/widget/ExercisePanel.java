@@ -27,6 +27,7 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
     private int mGlassWidth;
     private int mGlassHeight;
     private Bitmap mContentBitmap;
+    private WordView mWordView;
 
     public ExercisePanel(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
@@ -38,7 +39,12 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
         init(context);
     }
 
+    private void initView() {
+        mWordView = (WordView) findViewById(R.id.english_sentence);
+    }
+
     private void init(Context context) {
+        initView();
         mGlassWidth = getResources().getDimensionPixelOffset(R.dimen.glass_view_width);
         mGlassHeight = getResources().getDimensionPixelOffset(R.dimen.glass_view_height);
         initMagnifierView(context);

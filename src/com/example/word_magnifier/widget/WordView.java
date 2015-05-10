@@ -12,6 +12,7 @@ import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,7 @@ import java.util.List;
 public class WordView extends EditText {
     private final static String TAG = "WordView";
     private SpannableString mSpannableString;
+    private String mSelectedWord;
 
     public WordView(Context context) {
         super(context);
@@ -62,58 +64,71 @@ public class WordView extends EditText {
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getAction();
         Layout layout = getLayout();
-        int line = 0;
+        int line;
         ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.MAGENTA);
 
-        do {
-            if (mWords == null) {
+        if (mWords == null || layout == null) {
+            return false;
+        }
+
+        switch (action) {
+            case MotionEvent.ACTION_DOWN:
+                mLastX = -1f;
+                mLastY = -1f;
+
                 break;
-            }
+            case MotionEvent.ACTION_MOVE:
+                mSelectedWord = null;
+                clearSpan();
+                if (Math.abs(event.getX() - mLastX) > MIN_VALID_MOVE || Math.abs(event.getY() - mLastY) > MIN_VALID_MOVE) {
+                    mLastX = event.getX();
+                    mLastY = event.getY();
 
-            switch (action) {
-                case MotionEvent.ACTION_DOWN:
-                    mLastX = -1f;
-                    mLastY = -1f;
+                    line = layout.getLineForVertical(getScrollY() + (int) event.getY());
+                    final int index = layout.getOffsetForHorizontal(line, (int) event.getX());
+                    Word selectedWord = getWord(index);
 
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    clearSpan();
-                    if (Math.abs(event.getX() - mLastX) > MIN_VALID_MOVE || Math.abs(event.getY() - mLastY) > MIN_VALID_MOVE) {
-                        mLastX = event.getX();
-                        mLastY = event.getY();
-
-                        Log.d(TAG, "x: " + event.getX() + ", y: " + event.getY());
-                        line = layout.getLineForVertical(getScrollY() + (int) event.getY());
-                        final int index = layout.getOffsetForHorizontal(line, (int) event.getX());
-                        Log.d(TAG, "line: " + line + " string index: " + index);
-                        Word selectedWord = getWord(index);
-
-                        if (selectedWord != null) {
-                            Log.d(TAG, "selected word: " + selectedWord);
-                            //Selection.setSelection(getEditableText(), selectedWord.getStart(), selectedWord.getEnd());
-                            mSpannableString.setSpan(foregroundColorSpan,
-                                    selectedWord.getStart(), selectedWord.getEnd(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            setText(mSpannableString);
-                        }
+                    if (selectedWord != null) {
+                        mSpannableString.setSpan(foregroundColorSpan,
+                                selectedWord.getStart(), selectedWord.getEnd(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                        setText(mSpannableString);
+                        mSelectedWord = getText().subSequence(selectedWord.getStart(), selectedWord.getEnd()).toString();
                     }
-                    break;
+                }
+                break;
 
-                case MotionEvent.ACTION_UP:
-                    mLastX = -1f;
-                    mLastY = -1f;
-                    //Selection.removeSelection(getEditableText());
-                    mSpannableString.removeSpan(foregroundColorSpan);
-                    break;
-            }
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                mLastX = -1f;
+                mLastY = -1f;
+                clearSpan();
+                setText(mSpannableString);
+                showSelectedWord(mSelectedWord);
+                break;
+        }
+        return true;
+    }
 
-        } while (false);
+    public void trySelectWord(MotionEvent motionEvent) {
+        int[] location = new int[2];
+        getLocationOnScreen(location);
+        int x = (int) motionEvent.getRawX() - location[0];
+        int y = (int) motionEvent.getRawY() - location[1];
+        MotionEvent event = MotionEvent.obtain(motionEvent);
+        event.setLocation(x, y);
+        onTouchEvent(event);
+    }
 
-        return false;
+    private void showSelectedWord(String selectedWord) {
+        if (selectedWord != null) {
+            Toast.makeText(getContext(), selectedWord,
+                    Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void clearSpan() {
         ForegroundColorSpan[] spans = mSpannableString.getSpans(0, getText().length(), ForegroundColorSpan.class);
-        for(int i=0; i<spans.length; i++){
+        for (int i = 0; i < spans.length; i++) {
             mSpannableString.removeSpan(spans[i]);
         }
     }
