@@ -4,8 +4,17 @@
               android:layout_width="match_parent"
               android:layout_height="match_parent">
     <TextView
-            android:id="@+id/english_sentence"
+            android:id="@+id/unselect_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/dummy_text" />
+            android:background="@android:color/white"
+            android:text="@string/fuzzy_text" />
+
+    <com.example.word_magnifier.widget.WordView
+            android:id="@+id/english_sentence"
+            android:text="@string/dummy_text"
+            android:background="@android:color/white"
+            android:textColor="@android:color/black"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
 </LinearLayout>

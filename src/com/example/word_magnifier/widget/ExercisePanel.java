@@ -11,7 +11,6 @@ import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
-import android.widget.TextView;
 import com.example.word_magnifier.R;
 
 /**
@@ -20,7 +19,6 @@ import com.example.word_magnifier.R;
 public class ExercisePanel extends RelativeLayout implements View.OnLongClickListener{
     private static final String TAG = "ExercisePanel";
     private static final float SCALE_FACTOR = 2.0f;
-    private TextView mEnglishTextView;
 
     private boolean isMagnifierAdded = false;
     private volatile MotionEvent mCurrentMotionEvent;
@@ -37,7 +35,6 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
     public ExercisePanel(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         LayoutInflater.from(context).inflate(R.layout.exercise_panel_item, this, true);
-        mEnglishTextView = (TextView) findViewById(R.id.english_sentence);
         init(context);
     }
 
