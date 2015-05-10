@@ -2,13 +2,12 @@ package com.example.word_magnifier;
 
 import android.app.Activity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnLongClickListener;
 import android.view.View.OnTouchListener;
-import android.view.ViewGroup;
 import android.widget.TextView;
+import com.example.word_magnifier.utils.DisplayUtils;
 import com.example.word_magnifier.widget.WordMagnifier;
 
 
@@ -29,16 +28,14 @@ public class MainActivity extends Activity implements OnLongClickListener {
         contentText.setOnLongClickListener(this);
         contentText.setOnTouchListener(mExercisePanelTouchListener);
         mWordMagnifier = new WordMagnifier(getBaseContext());
-
-        ((ViewGroup)getWindow().getDecorView()).addView(mWordMagnifier);
+        DisplayUtils.init(getBaseContext());
     }
 
     @Override
     public boolean onLongClick(View v) {
-        Log.d(TAG, "on long click");
         isMagnifierAdded = true;
-        //mWordMagnifier.prepareForShow();
-        showMagnifier(mCurrentMotionEvent);
+        mWordMagnifier.prepareForShow();
+        tryShowMagnifier(mCurrentMotionEvent);
         return true;
     }
 
@@ -47,19 +44,14 @@ public class MainActivity extends Activity implements OnLongClickListener {
         public boolean onTouch(View v, MotionEvent event) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
-                    Log.d(TAG, "on action down");
                     mCurrentMotionEvent = MotionEvent.obtain(event);
                     break;
                 case MotionEvent.ACTION_MOVE:
-                    Log.d(TAG, "on action move");
                     mCurrentMotionEvent = MotionEvent.obtain(event);
-                    showMagnifier(event);
+                    tryShowMagnifier(event);
                     break;
                 case MotionEvent.ACTION_UP:
-                    if (isMagnifierAdded) {
-                        mWordMagnifier.hideMagnifier();
-                        isMagnifierAdded = false;
-                    }
+                    tryHideMagnifier();
                     break;
                 default:
                     break;
@@ -68,11 +60,18 @@ public class MainActivity extends Activity implements OnLongClickListener {
         }
     };
 
-    private void showMagnifier(MotionEvent event) {
+    private void tryShowMagnifier(MotionEvent event) {
         if (isMagnifierAdded) {
             int x = (int) event.getRawX();
             int y = (int) event.getRawY();
             mWordMagnifier.showTouchRegion(getWindow().getDecorView(), x, y);
+        }
+    }
+
+    private void tryHideMagnifier() {
+        if (isMagnifierAdded) {
+            mWordMagnifier.hideMagnifier();
+            isMagnifierAdded = false;
         }
     }
 }

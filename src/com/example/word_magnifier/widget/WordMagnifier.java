@@ -6,21 +6,15 @@ import android.graphics.Bitmap.Config;
 import android.graphics.drawable.BitmapDrawable;
 import android.util.AttributeSet;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.ImageView;
-import android.widget.PopupWindow;
-import com.example.word_magnifier.R;
+import com.example.word_magnifier.utils.DisplayUtils;
 
 public class WordMagnifier extends ImageView {
     private static WindowManager sWindowManager;
     private static WindowManager.LayoutParams mLayoutParams;
-    private PopupWindow mPopupWindow;
 
-    private static int lastX;
-    private static int lastY;
     private static int paramX;
     private static int paramY;
 
@@ -48,7 +42,6 @@ public class WordMagnifier extends ImageView {
         mContext = context;
         initMagWindowManager(context);
         initMagWindowParams();
-        initFloatingWindow();
     }
 
     private void initMagWindowManager(Context context) {
@@ -56,28 +49,12 @@ public class WordMagnifier extends ImageView {
     }
 
     private void initMagWindowParams() {
-        mLayoutParams = getLayoutParams();
+        mLayoutParams = new WindowManager.LayoutParams();
+        mLayoutParams.type = WindowManager.LayoutParams.TYPE_SYSTEM_ALERT;
+        mLayoutParams.format = PixelFormat.RGBA_8888;
+        mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         mLayoutParams.width = WINDOW_WIDTH;
         mLayoutParams.height = WINDOW_HEIGHT;
-    }
-
-    private void initFloatingWindow() {
-        mPopupWindow = new PopupWindow(mContext);
-        mPopupWindow.setFocusable(true);
-        mPopupWindow.setBackgroundDrawable(null);
-        mPopupWindow.setOutsideTouchable(true);
-        mPopupWindow.setContentView(this);
-        mPopupWindow.setWidth(WINDOW_WIDTH);
-        mPopupWindow.setHeight(WINDOW_HEIGHT);
-    }
-
-    public void setAnchorView(View anchorView) {
-        int[] location = new int[2];
-        anchorView.getLocationOnScreen(location);
-        Rect anchorRect = new Rect(location[0], location[1], location[0] + WINDOW_HEIGHT,
-                location[1] + WINDOW_HEIGHT);
-        mPopupWindow.showAtLocation(anchorView, Gravity.TOP, paramX, paramY);
-
     }
 
     /**
@@ -87,41 +64,27 @@ public class WordMagnifier extends ImageView {
         sWindowManager.addView(this, mLayoutParams);
     }
 
-    public void saveTouchPoint(int x, int y) {
-        updateParam(x, y);
-    }
-
     private void updateParam(int x, int y) {
         Log.d(TAG, "x: " + x + " y:" + y);
-        lastX = x;
-        lastY = y;
-
-        mLayoutParams.x = x - WINDOW_WIDTH / 2;
-        mLayoutParams.y = y - WINDOW_HEIGHT  - 20;
+        mLayoutParams.x = getMagnifierLeft(x);
+        mLayoutParams.y = getMagnifierTop(y);
         paramX = mLayoutParams.x;
         paramY = mLayoutParams.y;
         Log.d(TAG, "paramX: " + paramX + " paramY:" + paramY);
     }
 
-    private void updatePosition(int x, int y) {
-        setX(x);
-        setY(y);
-    }
-
     private void moveMagnifier(int x, int y) {
-        //updateParam(x, y);
-        updatePosition(x, y);
-        //sWindowManager.updateViewLayout(this, mLayoutParams);
+        updateParam(x, y);
+        sWindowManager.updateViewLayout(this, mLayoutParams);
     }
 
     public void hideMagnifier() {
-       // sWindowManager.removeView(this);
-        mPopupWindow.dismiss();
+        sWindowManager.removeView(this);
     }
 
     public void showTouchRegion(View touchedView, int x, int y) {
         moveMagnifier(x, y);
-        setBackground(getCurrentImage(touchedView, x, y));
+        setBackgroundDrawable(getCurrentImage(touchedView, x, y));
     }
 
     private BitmapDrawable getCurrentImage(View touchedView, int x, int y) {
@@ -133,19 +96,38 @@ public class WordMagnifier extends ImageView {
 
         Paint paint = new Paint();
         Canvas canvas = new Canvas(magnifierBitmap);
-        canvas.scale(SCALE_FACTOR, SCALE_FACTOR);
+        canvas.scale(SCALE_FACTOR, SCALE_FACTOR,
+                WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2);
         canvas.drawBitmap(currentScreen,
-                0, -80, paint);
+                getDisplayRegionLeft(x),
+                getDisplayRegionTop(y),
+                paint);
 
         BitmapDrawable outputDrawable = new BitmapDrawable(mContext.getResources(), magnifierBitmap);
         return outputDrawable;
     }
 
-    private int getLeftForDisplayRegion(int touchedX) {
+    private int getMagnifierLeft(int touchedX) {
+        return (touchedX - DisplayUtils.getWidthPixels() / 2);
+    }
+
+    private int getMagnifierTop(int touchedY) {
+        return (touchedY - DisplayUtils.getHeightPixels() / 2 - WINDOW_HEIGHT);
+    }
+
+    private int getDisplayRegionLeft(int touchedX) {
         return -(touchedX - WINDOW_WIDTH / 2);
     }
 
-    private int getTopForDisplayRegion(int touchedY) {
-        return -(touchedY + getResources().getDimensionPixelOffset(R.dimen.height_below_touch_point) - WINDOW_HEIGHT);
+    private int getDisplayRegionTop(int touchedY) {
+        return -(touchedY - WINDOW_HEIGHT / 2);
+    }
+
+    private int getDisplayViewWidth() {
+        return DisplayUtils.getWidthPixels();
+    }
+
+    private int getDisplayViewHeight() {
+        return DisplayUtils.getHeightPixels();
     }
 }
