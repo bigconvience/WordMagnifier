@@ -16,11 +16,12 @@ import com.example.word_magnifier.R;
 /**
  * Created by Administrator on 2015/5/9.
  */
-public class ExercisePanel extends RelativeLayout implements View.OnLongClickListener{
+public class ExercisePanel extends RelativeLayout implements View.OnLongClickListener,
+        WordView.OnWordSelectListener {
     private static final String TAG = "ExercisePanel";
     private static final float SCALE_FACTOR = 2.0f;
 
-    private boolean isMagnifierAdded = false;
+    private boolean mMagnifierAdded = false;
     private volatile MotionEvent mCurrentMotionEvent;
     private View mGlassView;
     private View mZoomView;
@@ -41,6 +42,7 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
 
     private void initView() {
         mWordView = (WordView) findViewById(R.id.english_sentence);
+        mWordView.setOnWordSelectListener(this);
     }
 
     private void init(Context context) {
@@ -61,7 +63,7 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
 
     @Override
     public boolean onLongClick(View v) {
-        isMagnifierAdded = true;
+        mMagnifierAdded = true;
         mContentBitmap = takeScreenShot(this);
         tryShowMagnifier(mCurrentMotionEvent);
         return true;
@@ -82,19 +84,47 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
                     tryShowMagnifier(event);
                     break;
                 case MotionEvent.ACTION_UP:
-                    tryHideMagnifier();
+                    if (mMagnifierAdded) {
+                        mWordView.clearSelectedWord();
+                        tryHideMagnifier();
+                    }
                     break;
                 default:
                     break;
+            }
+            if (mMagnifierAdded) {
+                performSelectWord(event);
             }
             return false;
         }
     };
 
-    private void tryShowMagnifier(MotionEvent event) {
-        if (isMagnifierAdded) {
-            mGlassView.setVisibility(INVISIBLE);
+    @Override
+    public void onWordSelect() {
+        tryHideMagnifier();
+        mContentBitmap = takeScreenShot(this);
+        mMagnifierAdded = true;
+        tryShowMagnifier(mCurrentMotionEvent);
+    }
 
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        return true;
+    }
+
+    private void performSelectWord(MotionEvent motionEvent) {
+        int[] location = new int[2];
+        mWordView.getLocationOnScreen(location);
+        int x = (int) motionEvent.getRawX() - location[0];
+        int y = (int) motionEvent.getRawY() - location[1];
+        MotionEvent event = MotionEvent.obtain(motionEvent);
+        event.setLocation(x, y);
+        mWordView.trySelectWord(event);
+    }
+
+    private void tryShowMagnifier(MotionEvent event) {
+        if (mMagnifierAdded) {
+            mGlassView.setVisibility(INVISIBLE);
             updateGlassViewPosition(event);
             showTouchRegion(event);
         }
@@ -117,10 +147,8 @@ public class ExercisePanel extends RelativeLayout implements View.OnLongClickLis
     }
 
     private void tryHideMagnifier() {
-        if (isMagnifierAdded) {
-            mGlassView.setVisibility(GONE);
-            isMagnifierAdded = false;
-        }
+        mGlassView.setVisibility(GONE);
+        mMagnifierAdded = false;
     }
 
     private Bitmap takeScreenShot(View view) {

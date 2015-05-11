@@ -25,6 +25,8 @@ public class WordView extends EditText {
     private final static String TAG = "WordView";
     private SpannableString mSpannableString;
     private String mSelectedWord;
+    private OnWordSelectListener mOnWordSelectListener;
+    private ForegroundColorSpan mForegroundColorSpan = new ForegroundColorSpan(Color.MAGENTA);
 
     public WordView(Context context) {
         super(context);
@@ -38,6 +40,10 @@ public class WordView extends EditText {
     public WordView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
         initialize();
+    }
+
+    public void setOnWordSelectListener(OnWordSelectListener listener) {
+        mOnWordSelectListener = listener;
     }
 
     private void initialize() {
@@ -63,11 +69,7 @@ public class WordView extends EditText {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         int action = event.getAction();
-        Layout layout = getLayout();
-        int line;
-        ForegroundColorSpan foregroundColorSpan = new ForegroundColorSpan(Color.MAGENTA);
-
-        if (mWords == null || layout == null) {
+        if (mWords == null) {
             return false;
         }
 
@@ -75,7 +77,6 @@ public class WordView extends EditText {
             case MotionEvent.ACTION_DOWN:
                 mLastX = -1f;
                 mLastY = -1f;
-
                 break;
             case MotionEvent.ACTION_MOVE:
                 mSelectedWord = null;
@@ -83,17 +84,7 @@ public class WordView extends EditText {
                 if (Math.abs(event.getX() - mLastX) > MIN_VALID_MOVE || Math.abs(event.getY() - mLastY) > MIN_VALID_MOVE) {
                     mLastX = event.getX();
                     mLastY = event.getY();
-
-                    line = layout.getLineForVertical(getScrollY() + (int) event.getY());
-                    final int index = layout.getOffsetForHorizontal(line, (int) event.getX());
-                    Word selectedWord = getWord(index);
-
-                    if (selectedWord != null) {
-                        mSpannableString.setSpan(foregroundColorSpan,
-                                selectedWord.getStart(), selectedWord.getEnd(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        setText(mSpannableString);
-                        mSelectedWord = getText().subSequence(selectedWord.getStart(), selectedWord.getEnd()).toString();
-                    }
+                    trySelectWord(event);
                 }
                 break;
 
@@ -101,22 +92,34 @@ public class WordView extends EditText {
             case MotionEvent.ACTION_CANCEL:
                 mLastX = -1f;
                 mLastY = -1f;
-                clearSpan();
-                setText(mSpannableString);
-                showSelectedWord(mSelectedWord);
+                clearSelectedWord();
                 break;
         }
         return true;
     }
 
-    public void trySelectWord(MotionEvent motionEvent) {
-        int[] location = new int[2];
-        getLocationOnScreen(location);
-        int x = (int) motionEvent.getRawX() - location[0];
-        int y = (int) motionEvent.getRawY() - location[1];
-        MotionEvent event = MotionEvent.obtain(motionEvent);
-        event.setLocation(x, y);
-        onTouchEvent(event);
+    public void trySelectWord(MotionEvent event) {
+        Layout layout = getLayout();
+        if (layout == null) {
+            return;
+        }
+        int line  = layout.getLineForVertical(getScrollY() + (int) event.getY());
+        final int index = layout.getOffsetForHorizontal(line, (int) event.getX());
+        Word selectedWord = getWord(index);
+
+        if (selectedWord != null) {
+            mSpannableString.setSpan(mForegroundColorSpan,
+                    selectedWord.getStart(), selectedWord.getEnd(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            setText(mSpannableString);
+            mSelectedWord = getText().subSequence(selectedWord.getStart(), selectedWord.getEnd()).toString();
+            mOnWordSelectListener.onWordSelect();
+        }
+    }
+
+    public void clearSelectedWord() {
+        clearSpan();
+        setText(mSpannableString);
+        showSelectedWord(mSelectedWord);
     }
 
     private void showSelectedWord(String selectedWord) {
@@ -217,7 +220,6 @@ public class WordView extends EditText {
             if (index >= getStart() && index <= getEnd()) {
                 return true;
             }
-
             return false;
         }
 
@@ -225,6 +227,10 @@ public class WordView extends EditText {
         public String toString() {
             return "( " + getStart() + ", " + getEnd() + " )";
         }
+    }
+
+    public interface OnWordSelectListener {
+        public void onWordSelect();
     }
 }
 

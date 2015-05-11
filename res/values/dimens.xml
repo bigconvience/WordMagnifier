@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="height_below_touch_point">10dp</dimen>
+    <dimen name="height_below_touch_point">24dp</dimen>
     <dimen name="zoom_view_width">206dp</dimen>
     <dimen name="zoom_view_height">45dp</dimen>
     <dimen name="zoom_view_padding">1dp</dimen>
